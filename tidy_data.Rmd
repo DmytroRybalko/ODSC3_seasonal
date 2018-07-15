@@ -1,0 +1,34 @@
+---
+title: "Tidy Water Data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(stringr)
+```
+
+В цьому файлі трансформуємо дані у потрібний формат для подальшої роботи з ними.
+1) Читаємо "сирі" дані (csv формат)
+```{r}
+#full_data <- read_delim("data/raw/2008-2018_18052018.corrected.csv", delim = ";")
+#water_user <- read_csv("data/raw/water_users_cleaned.csv")
+full_data <- readRDS("data/raw/data2008_2018.Rds")
+water_user <- readRDS("data/raw/water_user.Rds")
+```
+2) Заміняємо NAs у колонках з показниками забруднення (колонки 9-24), перетворюємо формат дати
+```{r}
+full_data <- full_data %>%
+  mutate_at(vars(Azot_zahalnyj__mh_per_dm3:Symazyn__mkh_per_dm3f), funs(ifelse(is.na(.), 0, .))) %>% 
+  mutate_at(.vars = c('Fitoplankton__tys_klityn_per_dm3', 'Symazyn__mkh_per_dm3f'), as.numeric) %>% 
+  mutate_at('Data_sposterezhen', as.Date, "%d.%m.%Y")
+```
+3) Зберігаємо перетворений датасет для подальшої роботи з ним.
+```{r eval=FALSE}
+saveRDS(full_data, "clean_water_data.Rds")
+```
+
