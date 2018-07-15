@@ -1,0 +1,84 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(stringr)
+```
+
+#### 1.Read first line (which is head)
+```{r}
+water_user <- readRDS("data/raw/water_user.Rds")
+```
+
+```{r}
+wu_clastered <- kmeans(water_user[, -(1:3)], centers = 4, nstart = 5)
+wu_clastered
+```
+```{r}
+df_viz <- cbind(water_user, Cluster = wu_clastered$cluster)
+```
+Try PCA
+```{r}
+pca_result <- prcomp(water_user[ ,-(1:3)], scale = T)
+pca_result$rotation
+```
+```{r}
+cbind(df_viz, as.tibble(pca_result$x)) %>% 
+  #dplyr::filter(PC1 < 5, PC2 < 10) %>% 
+  ggplot(aes(PC1, PC2, color = factor(Cluster))) +
+    geom_point()
+    #geom_text(aes(label = company_name))
+```
+```{r}
+cbind(df_viz, as.tibble(pca_result$x)) %>% 
+  dplyr::filter(Cluster == 4) %>% View
+```
+## water_user dataset
+Рейтинг підприємств з найбільшою часткою "Оборотнього використання" води
+```{r}
+water_user %>% 
+  dplyr::filter(`Оборотне використання` > 0) %>% 
+  arrange(desc(`Оборотне використання`)) %>% 
+  View()
+```
+Рейтинг підприємств з найбільшою часткою "Забруднених" води
+```{r}
+water_user %>% 
+  dplyr::filter(`Забруднених` > 0) %>% 
+  arrange(desc(`Забруднених`)) %>% 
+  View()
+```
+Рейтинг підприємств з найбільшою часткою "Очищених на спорудах" води
+```{r}
+water_user %>% 
+  dplyr::filter(`Очищених на спорудах` > 0) %>% 
+  arrange(desc(`Очищених на спорудах`)) %>% 
+  View()
+```
+Try PCA
+```{r}
+pca_result <- prcomp(water_user[ ,-(1:3)], scale = T)
+pca_result$rotation
+```
+```{r}
+summary(pca_result)
+```
+```{r}
+cbind(water_user, as.tibble(pca_result$x)) %>% 
+  dplyr::filter(PC1 < 5, PC2 < 10) %>% 
+  ggplot(aes(PC1, PC2)) +
+    geom_point() +
+    geom_text(aes(label = company_name))
+```
+```{r}
+cbind(water_user, as.tibble(pca_result$x)) %>% 
+  dplyr::filter(PC1 > 5, PC2 > 10) %>% View()
+```
+
