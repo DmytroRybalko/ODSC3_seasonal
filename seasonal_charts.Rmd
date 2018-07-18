@@ -1,0 +1,171 @@
+---
+title: "Untitled"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width = 9) #fig.show = 'animation')
+
+library(tidyverse)
+library(lubridate)
+library(RColorBrewer)
+library(trelliscopejs)
+library(gganimate)
+library(animation)
+
+ani.options(ani.width = 800)
+```
+Load data
+```{r}
+water_data <- readRDS("data/processing/clean_water_data.Rds")
+```
+Make dataset for representing monthly changes by water parameters via years 2008-2018 for each water region parameter
+```{r}
+df_season <- water_data %>% 
+  select(-(1:3), -(5:7)) %>%
+  mutate(Year = factor(year(Data_sposterezhen), ordered = T, levels = seq(2017, 2008, -1)),
+         Month = month(Data_sposterezhen, label = T)) %>% 
+  dplyr::filter(Data_sposterezhen < "2018-01-01") %>% 
+  select(1, 2, Year, Month, everything()) %>% 
+  gather(key = Parameter, value = Value, -(1:4)) %>% 
+  select(-Data_sposterezhen) %>% 
+  group_by(Parameter, Rajon_richkovoho_basejnu, Year, Month) %>% 
+  summarise(Value = mean(Value))
+```
+Visualize for one parameter and one water region
+```{r}
+df_season %>% 
+  dplyr::filter(Parameter == 'Kysen_rozchynenyj_MhO2_per_dm3',
+                Rajon_richkovoho_basejnu == 'Дунай') %>%
+  ggplot(aes(x = Month, y = Value)) +
+    geom_area(aes(fill = Year, group = Year), color = "white", alpha = 0.8) +
+    scale_x_discrete(expand = c(0.01, 0.01)) +
+    #scale_y_discrete(expand = c(0.01, 0.01)) +
+    scale_color_manual(values = brewer.pal(10, "Set1")) +
+    labs(title = "Зміна середньомісячного значення Розчиненого кисню впродовж кожного року",
+         x = NULL) +
+    theme_classic() +
+    theme(panel.grid.major.x = element_line(colour="black"),
+          axis.text = element_text(size = 12, colour = "black"),
+          legend.position = "right",
+          legend.title = element_text(face = "bold", size = 13),
+          legend.text = element_text(size = 12))
+```
+```{r}
+df_season %>% 
+  dplyr::filter(Parameter == 'Kysen_rozchynenyj_MhO2_per_dm3',
+                Rajon_richkovoho_basejnu == 'Дніпро') %>%
+  select(-Data_sposterezhen) %>% 
+  top_n(20) %>% 
+  group_by(Parameter, Rajon_richkovoho_basejnu, Year, Month) %>% 
+  summarise(Value = mean(Value)) %>% View()
+```
+```{r}
+df_season %>% 
+  dplyr::filter(Parameter == 'Kysen_rozchynenyj_MhO2_per_dm3') %>%
+  ggplot(aes(x = Month, y = Value)) +
+    geom_area(aes(fill = Year, group = Year), color = "white", alpha = 0.8) +
+    facet_wrap(~ Rajon_richkovoho_basejnu, nrow = 4, ncol = 2, scales = "free_y") +
+    scale_color_manual(values = brewer.pal(10, "Set1")) +
+    labs(title = "Зміна середньомісячного значення Розчиненого кисню впродовж кожного року",
+         x = NULL, y = NULL) +
+    theme_classic() +
+    theme(
+      panel.grid.major.x = element_line(colour="black")
+    )
+```
+2) Sulfat_iony__mh_per_dm3 - done
+3) Xloryd_iony__mh_per_dm3 - done
+4) Syntetychni_poverxnevo_aktyvni_rechovyny__anionni___mh_per_dm3 - done (no Visla)
+5) Zavysli__suspendovani__rechovyny__mh_per_dm3 - done!
+6) BSK5__MhO_per_dm3 - done!
+7) Ximichne_spozhyvannya_kysnyu__mhO_per_dm3 - done!
+8) Nitrat_iony__mh_per_dm3 - done!
+9) !!!Azot_zahalnyj__mh_per_dm3 - only for Dnister, Dunay
+10) !! Permanhanatna_okyslyuvanist__mhO_per_dm3 - done (no Visla , Prichornomor)
+11) Sulfat_iony__mh_per_dm3 - done!
+12) Amonij_iony__mh_per_dm3 - done!
+13) Fosfat_iony__polifosfaty___mh_per_dm3 - done!
+14) Fitoplankton__tys_klityn_per_dm3 - only for Dnipro and Don
+15) Nitryt_iony__mh_per_dm3 - done! 
+```{r}
+df_season %>% 
+  dplyr::filter(Parameter == 'Nitryt_iony__mh_per_dm3') %>%
+  ggplot(aes(x = Month, y = Value)) +
+    geom_area(aes(fill = Year, group = Year), color = "white", alpha = 0.8) +
+    facet_wrap(~ Rajon_richkovoho_basejnu, nrow = 4, ncol = 2, scales = "free_y") +
+    scale_color_manual(values = brewer.pal(10, "Set1")) +
+    labs(title = "Зміна середньомісячного значення Хлорид-іонів впродовж кожного року",
+         x = NULL, y = NULL) +
+    theme_classic() +
+    theme(panel.grid.major.x = element_line(colour="black"))
+```
+Use trelliscopejs
+```{r}
+aa <- df_season %>% 
+  group_by(Parameter, Rajon_richkovoho_basejnu) %>% 
+  nest()
+
+ggplot(aes(x = Month, y = Value)) +
+    geom_area(aes(fill = Year, group = Year), color = "white", alpha = 0.8) +
+    scale_color_manual(values = brewer.pal(10, "Set1")) +
+    labs(title = "Зміна середньомісячного значення Розчиненого кисню впродовж кожного року") +
+    theme_classic() +
+    theme(panel.grid.major.x = element_line(colour="black"))
+```
+
+```{r}
+gg <- aa[49:56,] %>% 
+  mutate(panel = map_plot(data, 
+      ~ ggplot(data = .x, aes(x = Month, y = Value)) +
+          geom_area(aes(fill = Year, group = Year), color = "white", alpha = 0.8) +
+          scale_color_manual(values = brewer.pal(10, "Set1")) +
+          theme_classic() +
+          theme(panel.grid.major.x = element_line(colour="black"))))
+
+gg %>% 
+   trelliscope(name = "city_vs_highway_mpg", self_contained = T)
+```
+
+
+Use gganimate 
+```{r}
+gg1 <- ggplot(df_season, aes(x = Month, y = Value, frame = Parameter)) +
+    geom_area(aes(fill = Year, group = Year), color = "black") +
+    facet_wrap(~ Rajon_richkovoho_basejnu, nrow = 4, ncol = 2, scales = "free_y") +
+    #scale_color_manual(values = brewer.pal(10, "Set1")) +
+    labs(title = "Зміна середньомісячного значення параметру впродовж кожного року",
+         x = NULL, y = NULL) 
+    #theme_classic() +
+    #theme(panel.grid.major.x = element_line(colour="black"))
+
+gganimate(gg1)
+  #facet_trelliscope(~ Rajon_richkovoho_basejnuter, nrow = 4, ncol = 2, path = "trelliscope", self_contained = T)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

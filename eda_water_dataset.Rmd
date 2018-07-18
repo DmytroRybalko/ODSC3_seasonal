@@ -42,7 +42,7 @@ df_pca %>%
 Подивимося на першу PC1 компоненту
 ```{r}
 df_pca %>% 
-  dplyr::filter(PC == 'PC2') %>% 
+  dplyr::filter(PC == 'PC1') %>% 
   mutate(parameter = substr(.$parameter, 1, 16)) %>% 
   ggplot(aes(x = reorder(parameter, PC_value), y = PC_value, fill = parameter)) +
   geom_col(show.legend = F) +
